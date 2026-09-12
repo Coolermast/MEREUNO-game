@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEREUNO - Traffic Safety Card Game</title>
+    <style>
+        :root {
+            --red: #e74c3c;
+            --blue: #3498db;
+            --green: #2ecc71;
+            --yellow: #f1c40f;
+            --purple: #9b59b6;
+            --dark: #1a252f;
+            --bg: #111b24;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-image: radial-gradient(circle, #1a2c3d 0%, #0d151d 100%);
+        }
+
+        /* FULLSCREEN BUTTON */
+        .fullscreen-btn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #fff;
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.2s;
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        /* SCREENS */
+        .screen {
+            display: none;
+            width: 100%;
+            max-width: 1000px;
+            height: 100vh;
+            max-height: 720px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            position: relative;
+        }
+
+        .active-screen {
+            display: flex;
+        }
+
+        /* MAIN MENU */
+        #menu-screen {
+            justify-content: center;
+            gap: 15px;
+            text-align: center;
+        }
+
+        .logo-container {
+            margin-bottom: 10px;
+        }
+
+        h1.logo {
+            font-size: 4.5rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: #fff;
+            text-shadow: 0 5px 0 var(--red), 0 10px 0 var(--blue), 0 15px 0 var(--green);
+            animation: pulse 2s infinite alternate;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #bdc3c7;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            color: var(--yellow);
+            font-weight: bold;
+            font-style: italic;
+            margin-top: 8px;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .card-preview {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+            justify-content: center;
+        }
+
+        .card-preview .card-frame {
+            transform: rotate(-10deg) translateY(0);
+            animation: float 3s ease-in-out infinite alternate;
+        }
+        .card-preview .card-frame:nth-child(2) {
+            transform: rotate(5deg) translateY(-10deg);
+            animation-delay: 0.5s;
+        }
+
+        .menu-btn {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #a04000;
+            transition: all 0.2s;
+            margin: 10px;
+            width: 280px;
+        }
+
+        .menu-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 #a04000;
+        }
+
+        .menu-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #a04000;
+        }
+
+        /* CARD DESIGN */
+        .card-frame {
+            width: 105px;
+            height: 155px;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            flex-shrink: 0;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .card-frame:hover {
+            transform: translateY(-15px) scale(1.05);
+            z-index: 10;
+            box-shadow: 0 12px 20px rgba(0,0,0,0.6);
+        }
+
+        .card-image-bg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .active-color-indicator {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        /* GAME BOARD */
+        #game-screen {
+            background-color: #1e8449;
+            border-radius: 20px;
+            border: 8px solid #145a32;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+            margin: auto;
+        }
+
+        .player-area {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+
+        .status-badge {
+            background: rgba(0,0,0,0.6);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .hand {
+            display: flex;
+            justify-content: center;
+            gap: -25px;
+            width: 100%;
+            max-width: 850px;
+            overflow-x: auto;
+            padding: 10px 0;
+            min-height: 170px;
+        }
+
+        .center-board {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            width: 100%;
+            margin: 15px 0;
+            position: relative;
+        }
+
+        .pile-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .pile-label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: #ecf0f1;
+        }
+
+        .stack-counter {
+            position: absolute;
+            top: -15px;
+            background: var(--red);
+            color: white;
+            font-weight: 900;
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 2px solid #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            animation: bounce 0.6s infinite alternate;
+        }
+
+        /* POSISI TOMBOL MEREUNO DI TENGAH KANAN LAYAR */
+        .center-right-mereuno {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 50;
+        }
+
+        .btn-mereuno-center {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border: 3px solid #fff;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 900;
+            padding: 18px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
+            letter-spacing: 1px;
+        }
+
+        .btn-mereuno-center:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.6);
+        }
+
+        .btn-mereuno-center:active {
+            transform: scale(0.95);
+        }
+
+        /* SPEECH BUBBLE BOT */
+        .speech-bubble {
+            position: absolute;
+            bottom: -45px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffffff;
+            color: #2c3e50;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-weight: 900;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 60;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 0 8px 10px 8px;
+            border-style: solid;
+            border-color: transparent transparent #ffffff transparent;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .game-btn {
+            background: #f39c12;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #d68910;
+        }
+        .game-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #d68910; }
+
+        .scan-trigger-btn {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            border: 2px solid #fff;
+            color: white;
+            padding: 10px 20px;
+            font-weight: 900;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(155, 89, 182, 0.5);
+            animation: pulse 1s infinite alternate;
+            display: none;
+        }
+
+        /* COLOR PICKER MODAL */
+        .color-picker-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .color-btn {
+            padding: 20px;
+            border-radius: 10px;
+            border: none;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        }
+
+        /* MODALS */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .modal-content {
+            background: #fff;
+            color: #333;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .quiz-title {
+            color: var(--red);
+            font-size: 1.4rem;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+
+        .quiz-question {
+            font-size: 1.1rem;
+            margin: 15px 0;
+            font-weight: 600;
+        }
+
+        .quiz-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .quiz-opt-btn {
+            background: #ecf0f1;
+            border: 2px solid #bdc3c7;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #2c3e50;
+        }
+
+        .quiz-opt-btn:hover {
+            background: var(--blue);
+            color: white;
+            border-color: #2980b9;
+        }
+
+        /* SCAN ME MINI GAME */
+        .minigame-container {
+            width: 100%;
+            height: 250px;
+            background: #34495e;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            margin: 15px 0;
+            border: 4px solid #2c3e50;
+        }
+
+        .road {
+            width: 33.33%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            border-right: 2px dashed #ecf0f1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding-top: 15px;
+        }
+        .road:nth-child(1) { left: 0; }
+        .road:nth-child(2) { left: 33.33%; }
+        .road:nth-child(3) { left: 66.66%; border-right: none; }
+
+        .road-sign {
+            background: #fff;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-align: center;
+            width: 90%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            cursor: pointer;
+            color: #333;
+        }
+
+        .car-player {
+            position: absolute;
+            bottom: 15px;
+            font-size: 2.2rem;
+            transition: left 0.3s ease;
+            transform: translateX(-50%);
+        }
+
+        /* ANIMATION KEMENANGAN */
+        .winner-banner {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #f1c40f;
+            text-shadow: 0 0 10px rgba(241, 196, 15, 0.8), 0 0 20px rgba(241, 196, 15, 0.5);
+            animation: celebrate 1s infinite alternate;
+            margin-bottom: 15px;
+        }
+
+        @keyframes celebrate {
+            0% { transform: scale(0.9) rotate(-3deg); }
+            100% { transform: scale(1.1) rotate(3deg); }
+        }
+
+        @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-8px); } }
+        @keyframes pulse { 0% { transform: scale(1); } 100% { transform: scale(1.03); } }
+        @keyframes float { 0% { transform: rotate(-5deg) translateY(0); } 100% { transform: rotate(-5deg) translateY(-10deg); } }
+        @keyframes popIn { 0% { transform: translateX(-50%) scale(0); } 100% { transform: translateX(-50%) scale(1); } }
+        
+        .shake { animation: shake 0.4s ease-in-out; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        .turn-indicator {
+            color: #f1c40f;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <button class="fullscreen-btn" onclick="toggleFullScreen()" title="Full Screen">⛶</button>
+
+    <!-- MAIN MENU SCREEN -->
+    <div id="menu-screen" class="screen active-screen">
+        <div class="logo-container">
+            <h1 class="logo">MEREUNO</h1>
+            <div class="subtitle">Traffic Safety Card Game</div>
+            <div class="tagline">"Paham Rambu, Tertib Selalu"</div>
+        </div>
+
+        <div class="card-preview">
+            <div class="card-frame">
+                <img src="https://imgur.com/Mub93Qw.png" class="card-image-bg" alt="Kartu Aksi">
+            </div>
+            <div class="card-frame">
+                <img src="https://imgur.com/qF4TQWO.png" class="card-image-bg" alt="Kartu Belakang">
+            </div>
+        </div>
+
+        <div>
+            <button class="menu-btn" onclick="startGame('bot')">🤖 PLAY WITH BOT</button><br>
+            <button class="menu-btn" onclick="startGame('dual')">👥 DUAL WITH FRIEND</button>
+        </div>
+    </div>
+
+    <!-- GAMEPLAY SCREEN -->
+    <div id="game-screen" class="screen">
+        <!-- TOP PLAYER (BOT / P2) -->
+        <div class="player-area">
+            <div class="status-badge" id="top-player-name">🤖 KOMPUTER</div>
+            <div class="turn-indicator" id="top-turn-indicator"></div>
+            <div class="speech-bubble" id="bot-speech">📢 MEREUNO!</div>
+            <div class="hand" id="top-hand"></div>
+        </div>
+
+        <!-- CENTER BOARD -->
+        <div class="center-board">
+            <div class="pile-container">
+                <span class="pile-label">DRAW</span>
+                <div class="card-frame" id="draw-pile" onclick="handleDrawClick()">
+                    <img src="https://imgur.com/qF4TQWO.png" class="card-image-bg" alt="Deck Back">
+                </div>
+            </div>
+
+            <div class="pile-container" style="position: relative;">
+                <span class="pile-label">DISCARD</span>
+                <div id="stack-counter-badge" class="stack-counter" style="display:none;">+0</div>
+                <div id="discard-pile"></div>
+            </div>
+
+            <!-- TOMBOL MEREUNO DI TENGAH KANAN LAYAR -->
+            <div class="center-right-mereuno">
+                <button class="btn-mereuno-center" onclick="pressMereuno()">MEREUNO!</button>
+            </div>
+        </div>
+
+        <!-- BOTTOM PLAYER (P1) -->
+        <div class="player-area">
+            <div class="turn-indicator" id="bottom-turn-indicator">GILIRANMU!</div>
+            <div class="hand" id="bottom-hand"></div>
+            <div class="action-btns">
+                <button class="game-btn" onclick="humanDrawCard()">DRAW CARD</button>
+                <button id="scan-trigger-btn" class="scan-trigger-btn" onclick="startPendingScanMiniGame()">📱 MAIN MINI GAME SCAN</button>
+            </div>
+            <div class="status-badge" id="bottom-player-name">🎮 KAMU</div>
+        </div>
+    </div>
+
+    <!-- COLOR PICKER MODAL -->
+    <div id="color-modal" class="modal">
+        <div class="modal-content">
+            <div class="quiz-title">🎨 PILIH WARNA</div>
+            <p>Pilih warna untuk melanjutkan permainan:</p>
+            <div class="color-picker-grid">
+                <button class="color-btn" style="background: var(--red);" onclick="selectColor('red')">MERAH</button>
+                <button class="color-btn" style="background: var(--blue);" onclick="selectColor('blue')">BIRU</button>
+                <button class="color-btn" style="background: var(--green);" onclick="selectColor('green')">HIJAU</button>
+                <button class="color-btn" style="background: var(--yellow); color:#333;" onclick="selectColor('yellow')">KUNING</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUIZ MODAL (+2 / +4 STACKING) -->
+    <div id="quiz-modal" class="modal">
+        <div class="modal-content">
+            <div class="quiz-title" id="quiz-header">🚨 TILANG LALU LINTAS</div>
+            <p id="quiz-subtitle">Jawab pertanyaan keselamatan berikut!</p>
+            <div class="quiz-question" id="quiz-q-text">Pertanyaan...</div>
+            <div class="quiz-options" id="quiz-options-container"></div>
+        </div>
+    </div>
+
+    <!-- SCAN ME MINI GAME MODAL -->
+    <div id="scan-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="quiz-title">📱 SCAN ME - MINI GAME</div>
+            <p id="scan-progress">PERTANYAAN 1/5</p>
+            <p class="quiz-question" id="scan-question">Pilih jalan yang sesuai!</p>
+
+            <div class="minigame-container">
+                <div class="road" onclick="driveToRoad(0)">
+                    <div class="road-sign" id="road-sign-0">Option 1</div>
+                </div>
+                <div class="road" onclick="driveToRoad(1)">
+                    <div class="road-sign" id="road-sign-1">Option 2</div>
+                </div>
+                <div class="road" onclick="driveToRoad(2)">
+                    <div class="road-sign" id="road-sign-2">Option 3</div>
+                </div>
+                <div class="car-player" id="player-car" style="left: 50%;">🚗</div>
+            </div>
+            <p style="font-size:0.8rem; color:#7f8c8d;">Klik pada lajur jalan untuk mengarahkan mobil!</p>
+        </div>
+    </div>
+
+    <!-- GAME OVER MODAL WITH ANIMATION -->
+    <div id="gameover-modal" class="modal">
+        <div class="modal-content">
+            <div class="winner-banner" id="winner-title">🎉 WINNER!</div>
+            <p id="winner-stats" style="margin: 15px 0; line-height: 1.6;"></p>
+            <button class="menu-btn" onclick="location.reload()">MAIN LAGI</button>
+        </div>
+    </div>
+
+    <script>
+        /* === CARD ASSETS === */
+        const CARD_BACK_IMG = "https://imgur.com/qF4TQWO.png";
+
+        const ACTION_CARDS_IMAGES = [
+            "https://imgur.com/Mub93Qw.png", "https://imgur.com/DHs0QiS.png",
+            "https://imgur.com/yFjBaQ6.png", "https://imgur.com/Wg7Rhjd.png",
+            "https://imgur.com/G8nyVTc.png", "https://imgur.com/lS05tCb.png",
+            "https://imgur.com/NYXn6oG.png", "https://imgur.com/rbkxu9u.png",
+            "https://imgur.com/AGgQKhs.png", "https://imgur.com/CqZLpka.png",
+            "https://imgur.com/6mhzmuj.png", "https://imgur.com/MUzNsoP.png",
+            "https://imgur.com/vpJmaHv.png", "https://imgur.com/lgJiuEP.png",
+            "https://imgur.com/zqiAdEm.png", "https://imgur.com/udJy7Vb.png",
+            "https://imgur.com/qnRaKiq.png", "https://imgur.com/xVGuam0.png",
+            "https://imgur.com/Rbx2FKN.png", "https://imgur.com/cASOh1a.png",
+            "https://imgur.com/hMJjofj.png", "https://imgur.com/vfqubbR.png",
+            "https://imgur.com/2Kox3ZW.png", "https://imgur.com/by1HoN2.png",
+            "https://imgur.com/9HsgKEA.png", "https://imgur.com/HLzutTh.png",
+            "https://imgur.com/APWoBRz.png", "https://imgur.com/jecpdVH.png",
+            "https://imgur.com/vawDk5a.png", "https://imgur.com/WowPOPc.png",
+            "https://imgur.com/y9Bhqhe.png", "https://imgur.com/IqkjTW5.png"
+        ];
+
+        const PLUS_TWO_IMAGES = {
+            red: "https://imgur.com/mrApV8V.png",
+            blue: "https://imgur.com/Cd1kxeH.png",
+            green: "https://imgur.com/XINtu3l.png",
+            yellow: "https://imgur.com/msQU7MC.png"
+        };
+
+        const SKIP_IMAGES = {
+            red: "https://imgur.com/KgBbagg.png",
+            blue: "https://imgur.com/cUnIKsj.png",
+            green: "https://imgur.com/rNcayqr.png",
+            yellow: "https://imgur.com/9mTvrFC.png"
+        };
+
+        const REVERSE_IMAGES = {
+            red: "https://imgur.com/QCt8LxQ.png",
+            blue: "https://imgur.com/iQBHWVV.png",
+            green: "https://imgur.com/TzjPBY7.png",
+            yellow: "https://imgur.com/0pTvKO1.png"
+        };
+
+        const WILD_IMAGE = "https://imgur.com/h9ngHlq.png";
+        const WILD_PLUS_4_IMAGE = "https://imgur.com/CBo3miL.png";
+        const SCAN_IMAGE = "https://imgur.com/AAoRxGQ.png";
+
+        /* === AUDIO SYNTHESIZER === */
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+        }
+
+        function playSound(type) {
+            initAudio();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'playCard') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.08);
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now); osc.stop(now + 0.08);
+            } else if (type === 'drawCard') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(500, now + 0.06);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+                osc.start(now); osc.stop(now + 0.06);
+            } else if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.2);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.setValueAtTime(100, now + 0.1);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now); osc.stop(now + 0.25);
+            } else if (type === 'win') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.setValueAtTime(600, now + 0.15);
+                osc.frequency.setValueAtTime(800, now + 0.3);
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                osc.start(now); osc.stop(now + 0.5);
+            }
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        /* === QUIZ BANK === */
+        const QUIZ_BANK = [
+            { q: "Apa arti dari rambu Dilarang Parkir?", opts: ["Tidak boleh berhenti sejenak", "Tidak boleh memarkir kendaraan", "Khusus parkir motor", "Boleh parkir hari libur"], ans: 1 },
+            { q: "Rambu peringatan keselamatan jalan umumnya mendominasi warna apa?", opts: ["Merah", "Kuning", "Hijau", "Biru"], ans: 1 },
+            { q: "Apa fungsi utama dari Zebra Cross?", opts: ["Tempat berjualan", "Area menyeberang pejalan kaki", "Jalur khusus sepeda motor", "Batas berhenti mobil"], ans: 1 },
+            { q: "Apa yang harus dilakukan saat melihat lampu lalu lintas berwarna KUNING?", opts: ["Ngebut secepatnya", "Bersiap untuk berhenti", "Langsung jalan terus", "Matikan mesin"], ans: 1 },
+            { q: "Rambu perintah wajib biasanya didominasi warna...", opts: ["Merah", "Biru", "Kuning", "Hijau"], ans: 1 },
+            { q: "Batas kecepatan maksimal di area pemukiman padat adalah...", opts: ["30 km/jam", "80 km/jam", "100 km/jam", "50 km/jam"], ans: 0 },
+            { q: "Helm standar yang wajib digunakan pengendara motor di Indonesia adalah...", opts: ["SNI", "DOT", "ECE", "ANSI"], ans: 0 }
+        ];
+
+        /* === GAME STATE VARIABLES === */
+        let gameMode = 'bot';
+        let deck = [];
+        let discardPile = [];
+        let players = [
+            { id: 0, name: 'KAMU', hand: [], isBot: false, saidMereuno: false },
+            { id: 1, name: 'KOMPUTER', hand: [], isBot: true, saidMereuno: false }
+        ];
+        let currentPlayerIdx = 0;
+        let activeWildColor = null;
+        let pendingStackValue = 0; // Menampung akumulasi +2 / +4
+        let lastStackPlayerIdx = null;
+
+        let colorCallback = null;
+        let botMereunoTimer = null;
+        let pendingScanMiniGameUser = false;
+
+        let scanQuestionsQueue = [];
+        let scanCurrentIndex = 0;
+        let scanWrongCount = 0;
+        let scanTargetPlayer = null;
+
+        /* === DECK BUILDER === */
+        function generateDeck() {
+            let result = [];
+            let idCounter = 1;
+            const colors = ['red', 'blue', 'green', 'yellow'];
+
+            ACTION_CARDS_IMAGES.forEach((imgUrl, idx) => {
+                const color = colors[idx % 4];
+                result.push({ id: idCounter++, type: 'action', color: color, img: imgUrl, action: null });
+            });
+
+            colors.forEach(color => {
+                result.push({ id: idCounter++, type: '+2', color: color, img: PLUS_TWO_IMAGES[color], action: '+2' });
+                result.push({ id: idCounter++, type: '+2', color: color, img: PLUS_TWO_IMAGES[color], action: '+2' });
+            });
+
+            colors.forEach(color => {
+                result.push({ id: idCounter++, type: 'skip', color: color, img: SKIP_IMAGES[color], action: 'skip' });
+            });
+
+            colors.forEach(color => {
+                result.push({ id: idCounter++, type: 'reverse', color: color, img: REVERSE_IMAGES[color], action: 'reverse' });
+            });
+
+            for(let i=0; i<4; i++) {
+                result.push({ id: idCounter++, type: 'wild', color: 'wild', img: WILD_IMAGE, action: 'wild' });
+            }
+
+            for(let i=0; i<4; i++) {
+                result.push({ id: idCounter++, type: '+4', color: 'wild', img: WILD_PLUS_4_IMAGE, action: '+4' });
+            }
+
+            for(let i=0; i<3; i++) {
+                result.push({ id: idCounter++, type: 'scan', color: 'wild', img: SCAN_IMAGE, action: 'scanme' });
+            }
+
+            return result.sort(() => Math.random() - 0.5);
+        }
+
+        function startGame(mode) {
+            initAudio();
+            gameMode = mode;
+            deck = generateDeck();
+            activeWildColor = null;
+            pendingStackValue = 0;
+            lastStackPlayerIdx = null;
+
+            players[0] = { id: 0, name: 'KAMU', hand: [], isBot: false, saidMereuno: false };
+            players[1] = { 
+                id: 1, 
+                name: mode === 'bot' ? 'KOMPUTER' : 'PEMAIN 2', 
+                hand: [], 
+                isBot: mode === 'bot', 
+                saidMereuno: false 
+            };
+
+            for(let i=0; i<7; i++) {
+                players[0].hand.push(deck.pop());
+                players[1].hand.push(deck.pop());
+            }
+
+            let topCard = deck.pop();
+            while(topCard.color === 'wild' || topCard.action) {
+                deck.unshift(topCard);
+                topCard = deck.pop();
+            }
+            discardPile.push(topCard);
+
+            document.getElementById('menu-screen').classList.remove('active-screen');
+            document.getElementById('game-screen').classList.add('active-screen');
+
+            document.getElementById('top-player-name').innerText = mode === 'bot' ? '🤖 KOMPUTER' : '🎮 PEMAIN 2';
+            document.getElementById('bottom-player-name').innerText = mode === 'bot' ? '🎮 KAMU' : '🎮 PEMAIN 1';
+
+            currentPlayerIdx = 0;
+            renderBoard();
+        }
+
+        /* === RENDER BOARD === */
+        function createCardElement(card, isHidden = false) {
+            const el = document.createElement('div');
+            el.className = 'card-frame';
+            
+            const img = document.createElement('img');
+            img.className = 'card-image-bg';
+            img.src = isHidden ? CARD_BACK_IMG : card.img;
+            el.appendChild(img);
+
+            return el;
+        }
+
+        function renderBoard() {
+            const topHandEl = document.getElementById('top-hand');
+            const bottomHandEl = document.getElementById('bottom-hand');
+            const discardEl = document.getElementById('discard-pile');
+            const stackBadge = document.getElementById('stack-counter-badge');
+
+            topHandEl.innerHTML = '';
+            bottomHandEl.innerHTML = '';
+            discardEl.innerHTML = '';
+
+            if(pendingStackValue > 0) {
+                stackBadge.innerText = `+${pendingStackValue}`;
+                stackBadge.style.display = 'block';
+            } else {
+                stackBadge.style.display = 'none';
+            }
+
+            const isTopHidden = (gameMode === 'bot');
+            players[1].hand.forEach((card, idx) => {
+                const cEl = createCardElement(card, isTopHidden);
+                if(!isTopHidden && currentPlayerIdx === 1) {
+                    cEl.onclick = () => playCard(1, idx);
+                }
+                topHandEl.appendChild(cEl);
+            });
+
+            players[0].hand.forEach((card, idx) => {
+                const cEl = createCardElement(card, false);
+                if(currentPlayerIdx === 0) {
+                    cEl.onclick = () => playCard(0, idx);
+                }
+                bottomHandEl.appendChild(cEl);
+            });
+
+            const topDiscard = discardPile[discardPile.length - 1];
+            if(topDiscard) {
+                const cEl = createCardElement(topDiscard, false);
+                
+                if(activeWildColor) {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'active-color-indicator';
+                    indicator.style.backgroundColor = `var(--${activeWildColor})`;
+                    cEl.appendChild(indicator);
+                }
+                discardEl.appendChild(cEl);
+            }
+
+            document.getElementById('bottom-turn-indicator').innerText = (currentPlayerIdx === 0) ? "👉 GILIRANMU!" : "";
+            document.getElementById('top-turn-indicator').innerText = (currentPlayerIdx === 1) ? "👉 GILIRAN LAWAN!" : "";
+
+            checkMereunoTimer();
+
+            if(currentPlayerIdx === 1 && players[1].isBot) {
+                setTimeout(botTurn, 1200);
+            }
+        }
+
+        /* === MEREUNO BOT TIMER (3 DETIK PENALTI) === */
+        function checkMereunoTimer() {
+            clearTimeout(botMereunoTimer);
+            const humanPlayer = players[0];
+            const botPlayer = players[1];
+
+            if(humanPlayer.hand.length === 1 && !humanPlayer.saidMereuno && botPlayer.isBot) {
+                botMereunoTimer = setTimeout(() => {
+                    if(humanPlayer.hand.length === 1 && !humanPlayer.saidMereuno) {
+                        showBotSpeech("📢 MEREUNO! Kamu terlambat!");
+                        playSound('wrong');
+                        drawCardFromDeck(0, 2);
+                        alert("⚠️ Kamu terlambat menekan MEREUNO! (Penalti +2 Kartu)");
+                        renderBoard();
+                    }
+                }, 3000);
+            }
+        }
+
+        function showBotSpeech(text) {
+            const bubble = document.getElementById('bot-speech');
+            bubble.innerText = text;
+            bubble.style.display = 'block';
+            setTimeout(() => {
+                bubble.style.display = 'none';
+            }, 2500);
+        }
+
+        /* === ATURAN KARTU VALID & STACKING === */
+        function getCurrentEffectiveColor() {
+            if(activeWildColor) return activeWildColor;
+            const topCard = discardPile[discardPile.length - 1];
+            return topCard ? topCard.color : null;
+        }
+
+        function isValidMove(card) {
+            const topCard = discardPile[discardPile.length - 1];
+            const effectiveColor = getCurrentEffectiveColor();
+
+            // KARTU SCAN ME BISA KAPAN SAJA
+            if(card.action === 'scanme') return true;
+
+            // ATURAN PENUMPUKAN KARTU PLUS (+2 ATAU +4)
+            if(pendingStackValue > 0) {
+                // Saat ada tumpukan plus, BISA ditumpuk dengan +2 atau +4 warna apa saja!
+                if(card.action === '+2' || card.action === '+4') return true;
+                return false;
+            }
+
+            // KARTU WILD LAINNYA
+            if(card.color === 'wild') return true;
+
+            // WARNA SAMA
+            if(card.color === effectiveColor) return true;
+
+            // KARTU AKSI/SIMBOL SAMA SAAT TIDAK ADA STACKING
+            if(card.type !== 'action' && card.type === topCard.type) return true;
+            if(card.img === topCard.img) return true;
+
+            return false;
+        }
+
+        function playCard(playerIdx, cardIdx) {
+            if(playerIdx !== currentPlayerIdx) return;
+
+            const player = players[playerIdx];
+            const card = player.hand[cardIdx];
+
+            if(!isValidMove(card)) {
+                playSound('wrong');
+                const handContainer = playerIdx === 0 ? document.getElementById('bottom-hand') : document.getElementById('top-hand');
+                if(handContainer.children[cardIdx]) {
+                    handContainer.children[cardIdx].classList.add('shake');
+                    setTimeout(() => handContainer.children[cardIdx].classList.remove('shake'), 400);
+                }
+                return;
+            }
+
+            playSound('playCard');
+            player.hand.splice(cardIdx, 1);
+            discardPile.push(card);
+
+            if(card.color !== 'wild') activeWildColor = null;
+
+            // APABILA MEMASANG KARTU PLUS
+            if(card.action === '+2') {
+                pendingStackValue += 2;
+                lastStackPlayerIdx = playerIdx;
+            } else if(card.action === '+4') {
+                pendingStackValue += 4;
+                lastStackPlayerIdx = playerIdx;
+            }
+
+            if(card.color === 'wild' || card.action === '+4') {
+                promptColorChoice(player, () => {
+                    executeAfterCardPlay(card, playerIdx);
+                });
+            } else {
+                executeAfterCardPlay(card, playerIdx);
+            }
+        }
+
+        function executeAfterCardPlay(card, playerIdx) {
+            if(players[playerIdx].hand.length === 0) {
+                showGameOver(players[playerIdx]);
+                return;
+            }
+
+            // APABILA MEMASANG KARTU SCAN ME
+            if(card.action === 'scanme') {
+                const targetIdx = playerIdx === 0 ? 1 : 0;
+                if(players[targetIdx].isBot) {
+                    triggerScanMeMiniGame(players[1], () => {
+                        switchTurn();
+                    });
+                } else {
+                    if(playerIdx === 1) {
+                        pendingScanMiniGameUser = true;
+                        document.getElementById('scan-trigger-btn').style.display = 'inline-block';
+                        alert("🚨 Lawan memasang kartu SCAN ME! Tekan tombol Mini Game untuk menyelesaikan tugas!");
+                    } else {
+                        triggerScanMeMiniGame(players[1], () => {
+                            switchTurn();
+                        });
+                    }
+                }
+                return;
+            }
+
+            if(card.action === 'skip' || card.action === 'reverse') {
+                renderBoard();
+            } else {
+                switchTurn();
+            }
+        }
+
+        function switchTurn() {
+            currentPlayerIdx = currentPlayerIdx === 0 ? 1 : 0;
+
+            // CEK APAKAH PEMAIN SEKARANG TIDAK PUNYA KARTU PLUS SAAT TERJADI PENUMPUKAN
+            if(pendingStackValue > 0) {
+                const currentPlayer = players[currentPlayerIdx];
+                const hasPlusCard = currentPlayer.hand.some(c => c.action === '+2' || c.action === '+4');
+
+                if(!hasPlusCard) {
+                    // Wajib jawab kuis sebanyak akumulasi penalti
+                    const countToResolve = pendingStackValue;
+                    pendingStackValue = 0;
+                    
+                    triggerQuizChallenge(currentPlayer, countToResolve, () => {
+                        // Jika kartu terakhir adalah +4, pemain yang menaruhnya yang memilih warna / berhak memegang kendali
+                        renderBoard();
+                    });
+                    return;
+                }
+            }
+
+            renderBoard();
+        }
+
+        function drawCardFromDeck(playerIdx, count = 1) {
+            playSound('drawCard');
+            for(let i=0; i<count; i++) {
+                if(deck.length === 0) {
+                    const top = discardPile.pop();
+                    deck = discardPile.sort(() => Math.random() - 0.5);
+                    discardPile = [top];
+                }
+                if(deck.length > 0) {
+                    players[playerIdx].hand.push(deck.pop());
+                }
+            }
+            players[playerIdx].saidMereuno = false;
+        }
+
+        function humanDrawCard() {
+            if(currentPlayerIdx !== 0) return;
+            
+            // JIKA SEDANG DIPENALTIS STACKING TAPI PILIH AMBIL KARTU REGULER
+            if(pendingStackValue > 0) {
+                const countToResolve = pendingStackValue;
+                pendingStackValue = 0;
+                triggerQuizChallenge(players[0], countToResolve, () => {
+                    switchTurn();
+                });
+                return;
+            }
+
+            drawCardFromDeck(0, 1);
+            switchTurn();
+        }
+
+        function handleDrawClick() {
+            if(currentPlayerIdx === 0) humanDrawCard();
+        }
+
+        function pressMereuno() {
+            const player = players[0];
+            if(player.hand.length === 1) {
+                player.saidMereuno = true;
+                playSound('correct');
+                alert("🎉 MEREUNO BERHASIL!");
+            } else {
+                playSound('wrong');
+                alert("⚠️ Kartu kamu belum tersisa 1!");
+            }
+        }
+
+        /* === MODAL DAN PROMPT === */
+        function promptColorChoice(player, callback) {
+            colorCallback = callback;
+            if(player.isBot) {
+                const colors = ['red', 'blue', 'green', 'yellow'];
+                activeWildColor = colors[Math.floor(Math.random() * colors.length)];
+                if(colorCallback) colorCallback();
+            } else {
+                document.getElementById('color-modal').style.display = 'flex';
+            }
+        }
+
+        function selectColor(color) {
+            activeWildColor = color;
+            document.getElementById('color-modal').style.display = 'none';
+            if(colorCallback) colorCallback();
+        }
+
+        /* === SISTEM KUIS PENALTIS TILANG === */
+        function triggerQuizChallenge(player, totalQuestions, callback) {
+            let wrongAnswers = 0;
+            let currentQIndex = 0;
+
+            function askNext() {
+                if(currentQIndex >= totalQuestions) {
+                    if(wrongAnswers > 0) {
+                        alert(`❌ Kamu salah menjawab ${wrongAnswers} pertanyaan dari ${totalQuestions}. Mendapat tambahan ${wrongAnswers} kartu dari deck!`);
+                        drawCardFromDeck(player.id, wrongAnswers);
+                    } else {
+                        playSound('win');
+                        alert(`🎉 LUAR BIASA! Berhasil menjawab semua (${totalQuestions}) pertanyaan dengan BENAR! Bebas dari penalti kartu.`);
+                    }
+                    callback();
+                    return;
+                }
+
+                const randomQuiz = QUIZ_BANK[Math.floor(Math.random() * QUIZ_BANK.length)];
+
+                if(player.isBot) {
+                    const isCorrect = Math.random() < 0.65;
+                    if(!isCorrect) wrongAnswers++;
+                    currentQIndex++;
+                    setTimeout(askNext, 300);
+                } else {
+                    const modal = document.getElementById('quiz-modal');
+                    document.getElementById('quiz-header').innerText = `🚨 TILANG LALU LINTAS (${currentQIndex + 1}/${totalQuestions})`;
+                    document.getElementById('quiz-subtitle').innerText = `Jawab pertanyaan ini untuk menghindari penalti!`;
+                    document.getElementById('quiz-q-text').innerText = randomQuiz.q;
+
+                    const optsContainer = document.getElementById('quiz-options-container');
+                    optsContainer.innerHTML = '';
+
+                    randomQuiz.opts.forEach((optText, optIdx) => {
+                        const btn = document.createElement('button');
+                        btn.className = 'quiz-opt-btn';
+                        btn.innerText = optText;
+                        btn.onclick = () => {
+                            if(optIdx === randomQuiz.ans) {
+                                playSound('correct');
+                            } else {
+                                playSound('wrong');
+                                wrongAnswers++;
+                            }
+                            modal.style.display = 'none';
+                            currentQIndex++;
+                            askNext();
+                        };
+                        optsContainer.appendChild(btn);
+                    });
+
+                    modal.style.display = 'flex';
+                }
+            }
+
+            askNext();
+        }
+
+        /* === MINI GAME SCAN ME === */
+        function startPendingScanMiniGame() {
+            document.getElementById('scan-trigger-btn').style.display = 'none';
+            pendingScanMiniGameUser = false;
+            triggerScanMeMiniGame(players[0], () => {
+                switchTurn();
+            });
+        }
+
+        function triggerScanMeMiniGame(player, callback) {
+            scanTargetPlayer = player;
+            scanWrongCount = 0;
+            scanCurrentIndex = 0;
+
+            scanQuestionsQueue = [];
+            for(let i=0; i<5; i++) {
+                scanQuestionsQueue.push(QUIZ_BANK[Math.floor(Math.random() * QUIZ_BANK.length)]);
+            }
+
+            if(player.isBot) {
+                for(let i=0; i<5; i++) {
+                    if(Math.random() >= 0.7) scanWrongCount++;
+                }
+                if(scanWrongCount > 0) {
+                    drawCardFromDeck(player.id, scanWrongCount);
+                }
+                callback();
+            } else {
+                document.getElementById('scan-modal').style.display = 'flex';
+                loadScanQuestion(callback);
+            }
+        }
+
+        function loadScanQuestion(callback) {
+            if(scanCurrentIndex >= 5) {
+                document.getElementById('scan-modal').style.display = 'none';
+                if(scanWrongCount > 0) {
+                    alert(`Mini Game Selesai! Kamu salah ${scanWrongCount} kali. Mengambil +${scanWrongCount} kartu dari deck.`);
+                    drawCardFromDeck(scanTargetPlayer.id, scanWrongCount);
+                } else {
+                    playSound('win');
+                    alert(`🎉 SEMPURNA! Bebas hukuman penalti kartu!`);
+                }
+                if(callback) callback();
+                return;
+            }
+
+            const q = scanQuestionsQueue[scanCurrentIndex];
+            document.getElementById('scan-progress').innerText = `PERTANYAAN ${scanCurrentIndex + 1}/5 (Salah: ${scanWrongCount})`;
+            document.getElementById('scan-question').innerText = q.q;
+
+            let options = [...q.opts].slice(0, 3);
+            let correctIndex = q.ans % 3;
+
+            document.getElementById('road-sign-0').innerText = options[0] || q.opts[0];
+            document.getElementById('road-sign-1').innerText = options[1] || q.opts[1];
+            document.getElementById('road-sign-2').innerText = options[2] || q.opts[2];
+
+            document.getElementById('scan-modal').dataset.correct = correctIndex;
+            document.getElementById('scan-modal').dataset.callback = callback;
+        }
+
+        function driveToRoad(roadIdx) {
+            const car = document.getElementById('player-car');
+            const positions = ['16.66%', '50%', '83.33%'];
+            car.style.left = positions[roadIdx];
+
+            const correctIdx = parseInt(document.getElementById('scan-modal').dataset.correct);
+
+            setTimeout(() => {
+                if(roadIdx !== correctIdx) {
+                    playSound('wrong');
+                    scanWrongCount++;
+                } else {
+                    playSound('correct');
+                }
+                scanCurrentIndex++;
+                loadScanQuestion();
+            }, 300);
+        }
+
+        /* === BOT AI LOGIC === */
+        function botTurn() {
+            if(currentPlayerIdx !== 1) return;
+
+            const botHand = players[1].hand;
+            let playableIndices = [];
+
+            botHand.forEach((c, idx) => {
+                if(isValidMove(c)) playableIndices.push(idx);
+            });
+
+            if(botHand.length === 2 && !players[1].saidMereuno) {
+                if(Math.random() < 0.9) {
+                    players[1].saidMereuno = true;
+                    showBotSpeech("📢 MEREUNO!");
+                }
+            }
+
+            if(playableIndices.length > 0) {
+                const chosenIdx = playableIndices[Math.floor(Math.random() * playableIndices.length)];
+                playCard(1, chosenIdx);
+            } else {
+                if(pendingStackValue > 0) {
+                    const countToResolve = pendingStackValue;
+                    pendingStackValue = 0;
+                    triggerQuizChallenge(players[1], countToResolve, () => {
+                        switchTurn();
+                    });
+                } else {
+                    drawCardFromDeck(1, 1);
+                    switchTurn();
+                }
+            }
+        }
+
+        /* === GAME OVER & ANIMASI KEMENANGAN === */
+        function showGameOver(winner) {
+            playSound('win');
+            document.getElementById('gameover-modal').style.display = 'flex';
+            document.getElementById('winner-title').innerText = `🏆 ${winner.name} PEMENANGNYA! 🎉`;
+            document.getElementById('winner-stats').innerHTML = `
+                Selamat! Kamu berhasil memenangkan permainan MEREUNO.<br>
+                <strong>Pemenang Utama:</strong> ${winner.name}<br>
+                Sisa Kartu Lawan: ${players[winner.id === 0 ? 1 : 0].hand.length} Kartu
+            `;
+        }
+    </script>
+</body>
+</html>
